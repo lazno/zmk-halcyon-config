@@ -7,14 +7,51 @@
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/bt.h>
+
+#define ZMK_POINTING_DEFAULT_MOVE_VAL 1200
+#include <dt-bindings/zmk/pointing.h>
+
 #include <dt-bindings/zmk/rgb.h>
+
+#define LAYER_Base       0
+#define LAYER_Sym        1
+#define LAYER_Nav        2
+#define LAYER_Tri        3
+#define LAYER_MouseSlow  4
+#define LAYER_Scroll     5
 
 / {
     conditional_layers {
         compatible = "zmk,conditional-layers";
         tri_layer {
-            if-layers = <1 2>;
-            then-layer = <3>;
+            if-layers = <LAYER_Sym LAYER_Nav>;
+            then-layer = <LAYER_Tri>;
+        };
+    };
+
+    macros {
+        m_ae: m_ae {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp A>;
+        };
+
+        m_oe: m_oe {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp O>;
+        };
+
+        m_ue: m_ue {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp U>;
         };
     };
 };
@@ -30,75 +67,103 @@
 // |  TAB  |  Q  |  W  |  E   |  R   |  T   |                   |  Y   |  U    |  I    |  O   |   P   |   -   |
 // |  CTRL |  A  |  S  |  D   |  F   |  G   |                   |  H   |  J    |  K    |  L   |   ;   |   '   |
 // | SHIFT |  Z  |  X  |  C   |  V   |  B   |   "["  |  |  "]"  |  N   |  M    |  ,    |  .   |   /   | SHIFT |
-//                     | ALT  | GUI  | LOWER|  SPACE |  | ENTER | RAISE| BSPC  | GUI   |
+//                     | ALT  | GUI  | SYM  |  SPACE |  | ENTER | NAV  | BSPC  | GUI   |
             bindings = <
-&kp ESC   &kp N1 &kp N2 &kp N3   &kp N4   &kp N5                     &kp N6 &kp N7   &kp N8    &kp N9  &kp N0   &kp GRAVE
-&kp TAB   &kp Q  &kp W  &kp E    &kp R    &kp T                      &kp Y  &kp U    &kp I     &kp O   &kp P    &kp MINUS
-&kp LCTRL &kp A  &kp S  &kp D    &kp F    &kp G                      &kp H  &kp J    &kp K     &kp L   &kp SEMI &kp SQT
-&kp LSHFT &kp Z  &kp X  &kp C    &kp V    &kp B  &kp LBKT   &kp RBKT &kp N  &kp M    &kp COMMA &kp DOT &kp FSLH &kp RSHFT
-                        &kp LALT &kp LGUI &mo 1  &kp SPACE  &kp RET  &mo 2  &kp BSPC &kp RGUI
+&kp ESC   &kp N1 &kp N2 &kp N3   &kp N4   &kp N5                                 &kp N6         &kp N7   &kp N8    &kp N9  &kp N0   &kp GRAVE
+&kp TAB   &kp Q  &kp W  &kp E    &kp R    &kp T                                  &kp Y          &kp U    &kp I     &kp O   &kp P    &kp MINUS
+&kp LCTRL &kp A  &kp S  &kp D    &kp F    &kp G                                  &kp H          &kp J    &kp K     &kp L   &kp SEMI &kp SQT
+&kp LSHFT &kp Z  &kp X  &kp C    &kp V    &kp B         &kp LBKT      &kp RBKT   &kp N          &kp M    &kp COMMA &kp DOT &kp FSLH &kp RSHFT
+                        &kp LALT &kp LGUI &mo LAYER_Sym &kp RET       &kp SPACE  &mo LAYER_Nav  &kp BSPC &kp RGUI
 
 &kp RGUI &none &none &none &none                                                        &none &none &none &none &kp RGUI
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
         };
 
-        lower_layer {
-            display-name = "Lower Layer";
+        symbol_layer {
+            display-name = "Symbols";
 // ------------------------------------------------------------------------------------------------------------
-// | BTCLR | BT1 | BT2 |  BT3 |  BT4 |  BT5 |                   |      |       |       |      |       |       |
-// |  F1   |  F2 |  F3 |  F4  |  F5  |  F6  |                   |  F7  |  F8   |  F9   |  F10 |  F11  |  F12  |
-// |   `   |  !  |  @  |  #   |  $   |  %   |                   |  ^   |  &    |  *    |  (   |   )   |   ~   |
-// | STUDIO|     |     |      |      |      |        |  |       |      |  _    |  +    |  {   |   }   |  "|"  |
+// |   `   |  ^  |  _  |  &   |  $   |  %   |                   |  /   |  7    |  8    |  9   |       |       |
+// |   '   |  "  |  [  |  {   |  }   |  ]   |                   |  -   |  4    |  5    |  6   |       |       |
+// |   #   |  !  |  =  |  (   |  )   |  |   |                   |  +   |  1    |  2    |  3   |       |       |
+// |   ä   |  ö  |  ü  |  <   |  >   |  @   |        |  |       |  *   |       |  0    |      |       |       |
 //                     |      |      |      |        |  |       |      |       |       |
             bindings = <
-&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4              &trans    &trans    &trans   &trans    &trans    &trans
-&kp F1     &kp F2       &kp F3       &kp F4       &kp F5       &kp F6                    &kp F7    &kp F8    &kp F9   &kp F10   &kp F11   &kp F12
-&kp GRAVE  &kp EXCL     &kp AT       &kp HASH     &kp DOLLAR   &kp PRCNT                 &kp CARET &kp AMPS  &kp STAR &kp LPAR  &kp RPAR  &kp TILDE
-&trans     &trans       &trans       &trans       &trans       &trans    &trans   &trans &trans    &kp MINUS &kp PLUS &kp LBRC  &kp RBRC  &kp PIPE
-                                     &trans       &trans       &trans    &trans   &trans &trans    &trans    &trans
+&kp GRAVE      &kp CARET         &kp UNDERSCORE   &kp AMPERSAND        &kp DOLLAR            &kp PERCENT                                &kp SLASH      &kp NUMBER_7 &kp NUMBER_8 &kp NUMBER_9 &trans   &trans
+&kp APOSTROPHE &kp DOUBLE_QUOTES &kp LEFT_BRACKET &kp LEFT_BRACE       &kp RIGHT_BRACE       &kp RIGHT_BRACKET                          &kp MINUS      &kp NUMBER_4 &kp NUMBER_5 &kp NUMBER_6 &trans   &trans
+&kp HASH       &kp EXCL          &kp EQUAL        &kp LEFT_PARENTHESIS &kp RIGHT_PARENTHESIS &kp PIPE                                   &kp PLUS       &kp NUMBER_1 &kp NUMBER_2 &kp NUMBER_3 &trans   &trans
+&m_ae          &m_oe             &m_ue            &kp LESS_THAN        &kp GREATER_THAN      &kp AT_SIGN       &trans        &trans     &kp ASTERISK   &trans       &kp NUMBER_0 &trans       &trans   &trans
+                                                  &trans               &trans                &trans            &trans        &trans     &trans         &trans       &trans
 
-&trans &trans &trans &trans &trans                                                                                &trans &trans &trans &trans &trans
+&trans   &trans &trans &trans &trans                                                       &trans &trans &trans &trans &trans
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
         };
 
-        raise_layer {
-            display-name = "Raise Layer";
+        navigation_layer {
+            display-name = "Navigation";
 // ------------------------------------------------------------------------------------------------------------
-// |       |     |     |      |      |STUDIO|                   |      |       |       |      |       |       |
-// |   `   |  1  |  2  |  3   |  4   |  5   |                   |  6   |   7   |   8   |  9   |   0   |       |
-// |   F1  |  F2 |  F3 |  F4  |  F5  |  F6  |                   |      |   <-  |   v   |  ^   |  ->   |       |
-// |   F7  |  F8 |  F9 |  F10 |  F11 |  F12 |        |  |       |  +   |   -   |   =   |  [   |   ]   |   \   |
-//                     |      |      |      |        |  |       |      |       |       |
+// |  F1   |  F2 |  F3 |  F4  |  F5  |  F6  |                   |  F7  |  F8   |  F9   | F10  | F11   | F12   |
+// |       |     |  ←  |  ↓   |  ↑   |  →   |                   |      |       |       |      |       |       |
+// | CTRL  |     |RCLK |SCROLL| LCLK | SLOW |                   |  ←   |  ↓    |  ↑    |  →   |       |       |
+// | SHIFT |     |     |      |      |      |        |  |       | M←   | M↓    | M↑    | M→   |       | SHIFT |
+//                     | ALT  | GUI  | SYM  | SPACE  |  | ENTER | NAV  | BSPC  | GUI   |
             bindings = <
-&trans    &trans &trans &trans  &trans  &studio_unlock               &trans      &trans    &trans    &trans   &trans    &trans
-&kp GRAVE &kp N1 &kp N2 &kp N3  &kp N4  &kp N5                       &kp N6      &kp N7    &kp N8    &kp N9   &kp N0    &trans
-&kp F1    &kp F2 &kp F3 &kp F4  &kp F5  &kp F6                       &trans      &kp LEFT  &kp DOWN  &kp UP   &kp RIGHT &trans
-&kp F7    &kp F8 &kp F9 &kp F10 &kp F11 &kp F12   &trans   &trans    &kp KP_PLUS &kp MINUS &kp EQUAL &kp LBKT &kp RBKT  &kp BSLH
-                        &trans  &trans  &trans    &trans   &trans    &trans      &trans    &trans
+&kp F1    &kp F2 &kp F3         &kp F4           &kp F5       &kp F6                                       &kp F7         &kp F8         &kp F9       &kp F10         &kp F11  &kp F12
+&none     &none  &kp LEFT_ARROW &kp DOWN_ARROW   &kp UP_ARROW &kp RIGHT_ARROW                              &none          &none          &none        &none           &none    &none
+&trans    &none  &mkp RCLK      &mo LAYER_Scroll &mkp LCLK    &mo LAYER_MouseSlow                          &kp LEFT_ARROW &kp DOWN_ARROW &kp UP_ARROW &kp RIGHT_ARROW &none    &none
+&trans    &none  &none          &none            &none        &none               &none         &none      &mmv MOVE_LEFT &mmv MOVE_DOWN &mmv MOVE_UP &mmv MOVE_RIGHT &none    &trans
+                                &trans           &trans       &trans              &trans        &trans     &trans         &trans         &trans
 
-&trans &trans &trans &trans &trans                                                          &trans &trans &trans &trans &trans
+&trans   &trans &trans &trans &trans                                                       &trans &trans &trans &trans &trans
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
         };
 
         tri_layer {
-            display-name = "Tri-Layer";
+            display-name = "Settings";
 // ------------------------------------------------------------------------------------------------------------
-// |     |     |     |     |     |     |                   |     |       |       |       |       |       |
-// |     |     |     |     |     |     |                   |     |       |       |       |       |       |
-// |     |     |     |     |     |     |                   |     | RGB_ON|RGB_EFF|RGB_HUI|RGB_SAI|RGB_BRI|
-// |     |     |     |     |     |     |        |  |       |     |RGB_OFF|RGB_EFR|RGB_HUD|RGB_SAD|RGB_BRD|
+// | BTCLR | BT1 | BT2 | BT3 | BT4 | BT5 |                   |     |       | MUTE  |VOL_DN |VOL_UP |       |
+// |       |     |     |     |     |     |                   |     |       |       |       |       |       |
+// |       |     |     |     |     |     |                   |     | RGB_ON|RGB_EFF|RGB_HUI|RGB_SAI|RGB_BRI|
+// |STUDIO |     |     |     |     |     |        |  |       |     |RGB_OFF|RGB_EFR|RGB_HUD|RGB_SAD|RGB_BRD|
 //                   |     |     |     |        |  |       |     |       |       |
             bindings = <
-&trans &trans &trans &trans &trans &trans                 &trans &trans          &trans          &trans          &trans          &trans
-&trans &trans &trans &trans &trans &trans                 &trans &trans          &trans          &trans          &trans          &trans
-&trans &trans &trans &trans &trans &trans                 &trans &rgb_ug RGB_ON  &rgb_ug RGB_EFF &rgb_ug RGB_HUI &rgb_ug RGB_SAI &rgb_ug RGB_BRI
-&trans &trans &trans &trans &trans &trans &trans   &trans &trans &rgb_ug RGB_OFF &rgb_ug RGB_EFR &rgb_ug RGB_HUD &rgb_ug RGB_SAD &rgb_ug RGB_BRD
-                     &trans &trans &trans &trans   &trans &trans &trans &trans
+&bt BT_CLR     &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4                           &trans         &trans          &kp C_MUTE      &kp C_VOL_DN    &kp C_VOL_UP    &trans
+&trans         &trans       &trans       &trans       &trans       &trans                                 &trans         &trans          &trans          &trans          &trans          &trans
+&trans         &trans       &trans       &trans       &trans       &trans                                 &trans         &rgb_ug RGB_ON  &rgb_ug RGB_EFF &rgb_ug RGB_HUI &rgb_ug RGB_SAI &rgb_ug RGB_BRI
+&studio_unlock &trans       &trans       &trans       &trans       &trans        &trans        &trans     &trans         &rgb_ug RGB_OFF &rgb_ug RGB_EFR &rgb_ug RGB_HUD &rgb_ug RGB_SAD &rgb_ug RGB_BRD
+                                         &trans       &trans       &trans        &trans        &trans     &trans         &trans          &trans
 
-&trans &trans &trans &trans &trans                                                                   &trans &trans &trans &trans &trans
+&trans   &trans &trans &trans &trans                                                       &trans &trans &trans &trans &trans
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
+        };
+
+        mouse_slow_layer {
+            display-name = "Mouse Slow";
+            bindings = <
+&trans    &trans &trans &trans   &trans   &trans                                 &trans            &trans           &trans            &trans           &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans                                 &trans            &trans           &trans            &trans           &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans                                 &trans            &trans           &trans            &trans           &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans        &trans        &trans     &mmv MOVE_X(-300) &mmv MOVE_Y(300) &mmv MOVE_Y(-300) &mmv MOVE_X(300) &trans   &trans
+                        &trans   &trans   &trans        &trans        &trans     &trans            &trans           &trans
+
+&trans   &trans &trans &trans &trans                                                       &trans &trans &trans &trans &trans
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
+        };
+
+        scroll_layer {
+            display-name = "Scroll";
+            bindings = <
+&trans    &trans &trans &trans   &trans   &trans                                 &trans         &trans         &trans       &trans          &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans                                 &trans         &trans         &trans       &trans          &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans                                 &trans         &trans         &trans       &trans          &trans   &trans
+&trans    &trans &trans &trans   &trans   &trans        &trans        &trans     &msc MOVE_LEFT &msc MOVE_DOWN &msc MOVE_UP &msc MOVE_RIGHT &trans   &trans
+                        &trans   &trans   &trans        &trans        &trans     &trans         &trans         &trans
+
+&trans   &trans &trans &trans &trans                                                       &trans &trans &trans &trans &trans
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
         };
